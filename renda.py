@@ -14,6 +14,11 @@ def simulador_financas():
     taxa_mensal = float(input("Digite a taxa de rendimento mensal (ex: 0.0075 para 0,75%): "))
     meses = int(input("Digite o número de meses da simulação: "))
 
+    # Objetivo do usuário
+    renda_objetivo = parse_valor(input("Digite a renda passiva desejada (R$): "))
+    prazo_objetivo = int(input("Digite o prazo em anos para atingir (ex: 10): "))
+    montante_alvo = renda_objetivo / taxa_mensal
+
     # Aportes extras
     aportes_extra = {}
     while True:
@@ -56,18 +61,40 @@ def simulador_financas():
         if meses > 12 and mes % 12 == 0:
             aporte_sugerido *= 1.10  # aumenta aporte em 10% a cada 12 meses
 
+        # cálculo do aporte necessário para atingir objetivo no prazo
+        falta = montante_alvo - saldo
+        meses_restantes = (prazo_objetivo * 12) - mes
+        if meses_restantes > 0:
+            aporte_necessario = round(falta / meses_restantes, 2)
+        else:
+            aporte_necessario = 0
+
         historico.append({
             "Mês": mes,
-            "Valor": round(aporte_sugerido + valor_aporte_extra - valor_saque, 2),
+            "Aporte atual": round(aporte_sugerido + valor_aporte_extra - valor_saque, 2),
             "Montante": round(saldo, 2),
             "Rendimento (~0,75%)": round(rendimento, 2),
-            "Sugestão de aporte": round(aporte_sugerido, 2)
+            "Aporte necessário p/ objetivo": aporte_necessario
         })
 
     # Exibe resultado
     df = pd.DataFrame(historico)
     print("\nEvolução do saldo:")
     print(df)
+
+    # Cenário mantendo aporte atual: em quantos meses atinge o alvo
+    saldo = saldo_inicial
+    aporte = aporte_mensal
+    meses_para_alvo = 0
+    while saldo < montante_alvo:
+        saldo_mes = saldo + aporte
+        rendimento = saldo_mes * taxa_mensal
+        saldo = saldo_mes + rendimento
+        meses_para_alvo += 1
+    anos_para_alvo = round(meses_para_alvo / 12, 1)
+
+    print(f"\n➡ Mantendo o aporte atual de R$ {aporte_mensal}, você atingirá a renda desejada em aproximadamente {anos_para_alvo} anos.")
+    print(f"➡ Para atingir em {prazo_objetivo} anos, o aporte mensal necessário seria conforme a coluna 'Aporte necessário p/ objetivo'.")
 
 # Executa o simulador
 simulador_financas()
